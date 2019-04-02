@@ -1,30 +1,49 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "cpu.h"
 
 #define DATA_LEN 6
 
+unsigned char cpu_ram_read(struct cpu *cpu, int index)
+{
+  return cpu->ram[index];
+}
+
+void cpu_ram_write(struct cpu *cpu, int index, unsigned char val)
+{
+  cpu->ram[index] = val;
+}
+
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
  */
-void cpu_load(struct cpu *cpu)
+void cpu_load(struct cpu *cpu, int argc, char **argv)
 {
-  char data[DATA_LEN] = {
-      // From print8.ls8
-      0b10000010, // LDI R0,8
-      0b00000000,
-      0b00001000,
-      0b01000111, // PRN R0
-      0b00000000,
-      0b00000001 // HLT
-  };
+  FILE *fp;
+  char line[1048];
+
+  if (argc != 2)
+  {
+    printf("please specific a file\n");
+    return 1;
+  }
+
+  fp = fopen(argv[1], "r");
+
+  if (fp == NULL)
+  {
+    printf("error reading file: %s\n", argv[1]);
+    return 2;
+  }
 
   int address = 0;
 
-  for (int i = 0; i < DATA_LEN; i++)
+  while (fgets(line, 1048, fp) != NULL)
   {
-    cpu->ram[address++] = data[i];
+    char *endptr;
+    unsigned char val = strtoul(line, &endptr, 2);
+    cpu_ram_write(cpu, address++, val);
   }
-
-  // TODO: Replace this with something less hard-coded
 }
 
 /**
@@ -53,27 +72,38 @@ void cpu_run(struct cpu *cpu)
   {
     // TODO
     // 1. Get the value of the current instruction (in address PC).
-    char *current = cpu->pc;
+    unsigned char command = cpu->ram[cpu->pc];
+
     // 2. Figure out how many operands this next instruction requires
-    switch (*current)
+    int num_operands = command >> 6;
+
+    // 3. Get the appropriate value(s) of the operands following this instruction
+    unsigned char operand_1;
+    unsigned char operand_2;
+
+    if (num_operands > 0)
     {
+      operand_1 = cpu_ram_read(cpu, cpu->pc + 1);
+    }
+    if (num_operands > 1)
+    {
+      operand_2 = cpu_ram_read(cpu, cpu->pc + 2);
+    }
+
+    // 4. switch() over it to decide on a course of action.
+    switch (command)
+    {
+    // 5. Do whatever the instruction should do according to the spec.
     case LDI:
-      unsigned char reg = current + 1;
-      int val = current + 2;
-      cpu->registers[reg] = val;
-      cpu->pc = current + 3;
+      cpu->registers[operand_1] = operand_2;
       break;
 
     case PRN:
-      unsigned char reg = current + 1;
-      int val = registers[reg];
-      printf("%d\n", val);
-      cpu->pc = current + 2;
+      printf("%d\n", cpu->registers[operand_1]);
       break;
 
     case HLT:
       running = 0;
-      current++;
       break;
 
     default:
@@ -82,10 +112,8 @@ void cpu_run(struct cpu *cpu)
       break;
     }
 
-    // 3. Get the appropriate value(s) of the operands following this instruction
-    // 4. switch() over it to decide on a course of action.
-    // 5. Do whatever the instruction should do according to the spec.
     // 6. Move the PC to the next instruction.
+    cpu->pc += num_operands + 1;
   }
 }
 
@@ -95,9 +123,8 @@ void cpu_run(struct cpu *cpu)
 void cpu_init(struct cpu *cpu)
 {
   // TODO: Initialize the PC and other special registers
-  struct cpu *cpu = malloc(sizeof(cpu));
-  cpu->registers = malloc(sizeof(char *) * 8);
-  cpu->ram = malloc(sizeof(char *) * 256);
-  cpu->pc = cpu->ram;
+  cpu->registers = malloc(sizeof(unsigned char) * 8);
+  cpu->ram = malloc(sizeof(unsigned char) * 256);
+  cpu->pc = 0;
   return cpu;
 }
