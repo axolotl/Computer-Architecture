@@ -86,11 +86,13 @@ void cpu_run(struct cpu *cpu)
   {
     // if this is set to true the pc will step the the next instruction normally
     // if it is set to false (for call, return, etc) it won't
-    int increment_pc_normally = 1;
+    // int increment_pc_normally = 1;
 
     // TODO
     // 1. Get the value of the current instruction (in address PC).
     unsigned char command = cpu->ram[cpu->pc];
+    int is_alu = (command & 0b00100000) > 0 ? 1 : 0;                // bit mask to check for alu ops
+    int increment_pc_normally = (command & 0b00010000) > 0 ? 0 : 1; // bit mask to check if op sets pc manually
 
     // 2. Figure out how many operands this next instruction requires
     int num_operands = command >> 6;
@@ -108,65 +110,76 @@ void cpu_run(struct cpu *cpu)
       operand_2 = cpu_ram_read(cpu, cpu->pc + 2);
     }
 
-    // 4. switch() over it to decide on a course of action.
-    switch (command)
+    // check if op is alu
+    if (is_alu)
     {
-    // 5. Do whatever the instruction should do according to the spec.
-    case LDI:
-      cpu->registers[operand_1] = operand_2;
-      break;
-
-    case PRN:
-      printf("%d\n", cpu->registers[operand_1]);
-      break;
-
-    case HLT:
-      running = 0;
-      break;
-
-    case PUSH:
-      cpu->registers[7]--;
-      cpu->registers[operand_1];
-      cpu_ram_write(cpu, cpu->registers[7], cpu->registers[operand_1]);
-      break;
-
-    case POP:
-      cpu->registers[operand_1] = cpu_ram_read(cpu, cpu->registers[7]);
-      cpu->registers[7]++;
-      break;
-
-    case CALL:
-      // push next instruction to stack
-      // set pc to where call is pointing
-
-      // push to stack
-      cpu->registers[7]--;
-      cpu_ram_write(cpu, cpu->registers[7], cpu->pc + 2);
-
-      // set pc
-      cpu->pc = cpu->registers[operand_1];
-
-      // set pc to not increment normally
-      increment_pc_normally = 0;
-
-      break;
-
-    case RET:
-      // pop from stack and set pc to that var
-      cpu->pc = cpu_ram_read(cpu, cpu->registers[7]);
-      cpu->registers[7]++;
-
-      // set pc to not increment normally
-      increment_pc_normally = 0;
-
-      break;
-
-    case ST:
-      cpu_ram_write(cpu, cpu->registers[operand_1], cpu->registers[operand_2]);
-      break;
-
-    default:
       alu(cpu, command, operand_1, operand_2);
+    }
+
+    // 4. switch() over it to decide on a course of action.
+    else
+    {
+      switch (command)
+      {
+      // 5. Do whatever the instruction should do according to the spec.
+      case LDI:
+        cpu->registers[operand_1] = operand_2;
+        break;
+
+      case PRN:
+        printf("%d\n", cpu->registers[operand_1]);
+        break;
+
+      case HLT:
+        running = 0;
+        break;
+
+      case PUSH:
+        cpu->registers[7]--;
+        cpu->registers[operand_1];
+        cpu_ram_write(cpu, cpu->registers[7], cpu->registers[operand_1]);
+        break;
+
+      case POP:
+        cpu->registers[operand_1] = cpu_ram_read(cpu, cpu->registers[7]);
+        cpu->registers[7]++;
+        break;
+
+      case CALL:
+        // push next instruction to stack
+        // set pc to where call is pointing
+
+        // push to stack
+        cpu->registers[7]--;
+        cpu_ram_write(cpu, cpu->registers[7], cpu->pc + 2);
+
+        // set pc
+        cpu->pc = cpu->registers[operand_1];
+
+        // set pc to not increment normally
+        // increment_pc_normally = 0;
+
+        break;
+
+      case RET:
+        // pop from stack and set pc to that var
+        cpu->pc = cpu_ram_read(cpu, cpu->registers[7]);
+        cpu->registers[7]++;
+
+        // set pc to not increment normally
+        // increment_pc_normally = 0;
+
+        break;
+
+      case ST:
+        cpu_ram_write(cpu, cpu->registers[operand_1], cpu->registers[operand_2]);
+        break;
+
+      default:
+        printf("Unrecognized instruction: %d\n", op);
+        exit(1);
+        break;
+      }
     }
 
     // 6. Move the PC to the next instruction.
