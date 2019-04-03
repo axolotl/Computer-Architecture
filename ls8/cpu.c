@@ -165,7 +165,7 @@ void cpu_run(struct cpu *cpu)
         break;
 
       default:
-        printf("Unrecognized instruction: %d\n", op);
+        printf("Unrecognized instruction: %d\n", command);
         exit(1);
         break;
       }
@@ -184,10 +184,11 @@ void cpu_run(struct cpu *cpu)
  */
 void cpu_init(struct cpu *cpu)
 {
-  // TODO: Initialize the PC and other special registers
-  cpu->registers = malloc(sizeof(unsigned char) * 8);
-  cpu->ram = malloc(sizeof(unsigned char) * 256);
-  cpu->pc = 0;
+  // initialize the PC and other special registers
+  cpu->ram = calloc(256, sizeof(unsigned char));
+  cpu->registers = calloc(8, sizeof(unsigned char));
   cpu->registers[7] = 0xF3; // stack pointer
+  cpu->pc = 0;
+  cpu->fl = 0;
   return cpu;
 }

@@ -4,13 +4,13 @@
 // Holds all information about the CPU
 struct cpu
 {
-  // TODO
-  // PC
-  // registers (array)
-  // ram (array)
-  unsigned char pc;
-  unsigned char *registers;
   unsigned char *ram;
+  unsigned char *registers;
+  unsigned char pc;
+  unsigned char ir;
+  unsigned char mar;
+  unsigned char mdr;
+  unsigned char fl;
 };
 
 // ALU operations
@@ -18,7 +18,6 @@ enum alu_op
 {
   ALU_MUL = 0b10100010,
   ALU_ADD = 0B10100000
-  // Add more here
 };
 
 // Instructions
@@ -34,7 +33,6 @@ enum alu_op
 #define CALL 0b01010000
 #define RET 0b00010001
 #define ST 0b10000100
-// TODO: more instructions here. These can be used in cpu_run().
 
 // Function declarations
 
