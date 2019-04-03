@@ -84,11 +84,6 @@ void cpu_run(struct cpu *cpu)
 
   while (running)
   {
-    // if this is set to true the pc will step the the next instruction normally
-    // if it is set to false (for call, return, etc) it won't
-    // int increment_pc_normally = 1;
-
-    // TODO
     // 1. Get the value of the current instruction (in address PC).
     unsigned char command = cpu->ram[cpu->pc];
     int is_alu = (command & 0b00100000) > 0 ? 1 : 0;                // bit mask to check for alu ops
@@ -110,13 +105,13 @@ void cpu_run(struct cpu *cpu)
       operand_2 = cpu_ram_read(cpu, cpu->pc + 2);
     }
 
-    // check if op is alu
+    // 4. check if op is alu, if yes call alu
     if (is_alu)
     {
       alu(cpu, command, operand_1, operand_2);
     }
 
-    // 4. switch() over it to decide on a course of action.
+    // else switch() over it to decide on a course of action.
     else
     {
       switch (command)
@@ -156,18 +151,12 @@ void cpu_run(struct cpu *cpu)
         // set pc
         cpu->pc = cpu->registers[operand_1];
 
-        // set pc to not increment normally
-        // increment_pc_normally = 0;
-
         break;
 
       case RET:
         // pop from stack and set pc to that var
         cpu->pc = cpu_ram_read(cpu, cpu->registers[7]);
         cpu->registers[7]++;
-
-        // set pc to not increment normally
-        // increment_pc_normally = 0;
 
         break;
 
