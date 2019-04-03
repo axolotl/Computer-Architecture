@@ -161,6 +161,10 @@ void cpu_run(struct cpu *cpu)
 
       break;
 
+    case ST:
+      cpu_ram_write(cpu, cpu->registers[operand_1], cpu->registers[operand_2]);
+      break;
+
     default:
       alu(cpu, command, operand_1, operand_2);
     }
