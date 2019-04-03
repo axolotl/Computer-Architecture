@@ -42,7 +42,12 @@ void cpu_load(struct cpu *cpu, int argc, char **argv)
   {
     char *endptr;
     unsigned char val = strtoul(line, &endptr, 2);
-    cpu_ram_write(cpu, address++, val);
+
+    if (line != endptr)
+    {
+      // printf("line is%d, val is %d, endptr is %d\n", *line, val, *endptr);
+      cpu_ram_write(cpu, address++, val);
+    }
   }
 }
 
@@ -57,8 +62,12 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
     cpu->registers[regA] = cpu->registers[regA] * cpu->registers[regB];
     break;
 
+  case ALU_ADD:
+    cpu->registers[regA] = cpu->registers[regA] + cpu->registers[regB];
+    break;
+
   default:
-    printf("Unrecognized instruction\n");
+    printf("Unrecognized instruction: %d\n", op);
     exit(1);
     break;
   }
@@ -75,6 +84,10 @@ void cpu_run(struct cpu *cpu)
 
   while (running)
   {
+    // if this is set to true the pc will step the the next instruction normally
+    // if it is set to false (for call, return, etc) it won't
+    int increment_pc_normally = 1;
+
     // TODO
     // 1. Get the value of the current instruction (in address PC).
     unsigned char command = cpu->ram[cpu->pc];
@@ -111,12 +124,52 @@ void cpu_run(struct cpu *cpu)
       running = 0;
       break;
 
+    case PUSH:
+      cpu->registers[7]--;
+      cpu->registers[operand_1];
+      cpu_ram_write(cpu, cpu->registers[7], cpu->registers[operand_1]);
+      break;
+
+    case POP:
+      cpu->registers[operand_1] = cpu_ram_read(cpu, cpu->registers[7]);
+      cpu->registers[7]++;
+      break;
+
+    case CALL:
+      // push next instruction to stack
+      // set pc to where call is pointing
+
+      // push to stack
+      cpu->registers[7]--;
+      cpu_ram_write(cpu, cpu->registers[7], cpu->pc + 2);
+
+      // set pc
+      cpu->pc = cpu->registers[operand_1];
+
+      // set pc to not increment normally
+      increment_pc_normally = 0;
+
+      break;
+
+    case RET:
+      // pop from stack and set pc to that var
+      cpu->pc = cpu_ram_read(cpu, cpu->registers[7]);
+      cpu->registers[7]++;
+
+      // set pc to not increment normally
+      increment_pc_normally = 0;
+
+      break;
+
     default:
       alu(cpu, command, operand_1, operand_2);
     }
 
     // 6. Move the PC to the next instruction.
-    cpu->pc += num_operands + 1;
+    if (increment_pc_normally)
+    {
+      cpu->pc += num_operands + 1;
+    }
   }
 }
 
@@ -129,5 +182,6 @@ void cpu_init(struct cpu *cpu)
   cpu->registers = malloc(sizeof(unsigned char) * 8);
   cpu->ram = malloc(sizeof(unsigned char) * 256);
   cpu->pc = 0;
+  cpu->registers[7] = 0xF3; // stack pointer
   return cpu;
 }
