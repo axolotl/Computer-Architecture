@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "cpu.h"
 
-#define DATA_LEN 6
-
 unsigned char cpu_ram_read(struct cpu *cpu, int index)
 {
   return cpu->ram[index];
@@ -45,7 +43,6 @@ void cpu_load(struct cpu *cpu, int argc, char **argv)
 
     if (line != endptr)
     {
-      // printf("line is%d, val is %d, endptr is %d\n", *line, val, *endptr);
       cpu_ram_write(cpu, address++, val);
     }
   }
