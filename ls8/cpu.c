@@ -161,6 +161,23 @@ void cpu_run(struct cpu *cpu)
         cpu_ram_write(cpu, cpu->registers[operand_1], cpu->registers[operand_2]);
         break;
 
+      case CMP:
+        // flags: 00000LGE
+        if (cpu->registers[operand_1] == cpu->registers[operand_2])
+        {
+          cpu->fl = 0 & 0b00000001;
+        }
+        else if (cpu->registers[operand_1] < cpu->registers[operand_2])
+        {
+          cpu->fl = 0 & 0b00000100;
+        }
+        else if (cpu->registers[operand_1] > cpu->registers[operand_2])
+        {
+          cpu->fl = 0 & 0b00000010;
+        }
+
+        break;
+
       default:
         printf("Unrecognized instruction: %d\n", command);
         exit(1);
