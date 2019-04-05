@@ -178,6 +178,24 @@ void cpu_run(struct cpu *cpu)
 
         break;
 
+      case JMP:
+        cpu->pc = cpu->registers[operand_1];
+        break;
+
+      case JEQ:
+        if (cpu->fl & 0b00000001 > 0)
+        {
+          cpu->pc = cpu->registers[operand_1];
+        }
+        break;
+
+      case JNE:
+        if (cpu->fl & 0b00000001 == 0)
+        {
+          cpu->pc = cpu->registers[operand_1];
+        }
+        break;
+
       default:
         printf("Unrecognized instruction: %d\n", command);
         exit(1);
