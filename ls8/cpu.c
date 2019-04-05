@@ -63,8 +63,25 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
     cpu->registers[regA] = cpu->registers[regA] + cpu->registers[regB];
     break;
 
+  case ALU_CMP:
+    // flags: 00000LGE
+    if (cpu->registers[regA] == cpu->registers[regB])
+    {
+      cpu->fl = 0b00000001;
+    }
+    else if (cpu->registers[regA] < cpu->registers[regB])
+    {
+      cpu->fl = 0b00000100;
+    }
+    else if (cpu->registers[regA] > cpu->registers[regB])
+    {
+      cpu->fl = 0b00000010;
+    }
+
+    break;
+
   default:
-    printf("Unrecognized instruction: %d\n", op);
+    printf("Unrecognized ALU instruction: %d\n", op);
     exit(1);
     break;
   }
@@ -161,23 +178,6 @@ void cpu_run(struct cpu *cpu)
         cpu_ram_write(cpu, cpu->registers[operand_1], cpu->registers[operand_2]);
         break;
 
-      case CMP:
-        // flags: 00000LGE
-        if (cpu->registers[operand_1] == cpu->registers[operand_2])
-        {
-          cpu->fl = 0 & 0b00000001;
-        }
-        else if (cpu->registers[operand_1] < cpu->registers[operand_2])
-        {
-          cpu->fl = 0 & 0b00000100;
-        }
-        else if (cpu->registers[operand_1] > cpu->registers[operand_2])
-        {
-          cpu->fl = 0 & 0b00000010;
-        }
-
-        break;
-
       case JMP:
         cpu->pc = cpu->registers[operand_1];
         break;
@@ -187,13 +187,23 @@ void cpu_run(struct cpu *cpu)
         {
           cpu->pc = cpu->registers[operand_1];
         }
+        else
+        {
+          increment_pc_normally = 1;
+        }
+
         break;
 
       case JNE:
-        if (cpu->fl & 0b00000001 == 0)
+        if (cpu->fl != 1)
         {
           cpu->pc = cpu->registers[operand_1];
         }
+        else
+        {
+          increment_pc_normally = 1;
+        }
+
         break;
 
       default:
